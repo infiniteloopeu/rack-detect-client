@@ -1,0 +1,51 @@
+Rack::DetectClient is middleware to detect client capabilities (whether it is a mobile).
+
+Example:
+
+require 'rack/detect_client'
+use Rack::DetectClient, :configuration_file => 'config/rack_detect_client.yml'
+
+Sample configuration file:
+
+# the list of supported types and associated domains
+domains:
+  mobile: m
+  iphone: i
+  global: g
+
+# for these domains if user requests example.com and client is recognized as a mobile 
+# it will be redirected to domain "m.example.com" and 
+# x-rack.client-type header will be set to "mobile"
+
+
+# Rules to determine client type is the list of constraints for each domain type.
+# The top first constraint that is satisfied determines the domain.
+# It is not required but useful to use arrays instead of hashes to force order
+# of evaluating constraints.
+
+rules:
+-  iphone:
+   # Constraint is satisfied if HTTP_USER_AGENT header matched the given regexp
+   -  HTTP_USER_AGENT: !ruby/regexp /(Linux.+Android.+Safari)/
+   -  HTTP_USER_AGENT: !ruby/regexp /(Mobile\/?.+Safari)/
+-  default:
+     HTTP_USER_AGENT: !ruby/regexp /windows/i
+-  mobile:
+   # if constraint has string as a rule, it is checked if given string is included in specified header
+   - HTTP_ACCEPT: application/vnd.wap.xhtml+xml
+   - HTTP_USER_AGENT: !ruby/regexp /(up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone)/i
+   - HTTP_USER_AGENT: !ruby/regexp /\A(w3c |acs-|alav|alca|amoi|audi|avan|benq|bird|blac|blaz|brew|cell|cldc|cmd-|dang|doco|eric|hipt|inno|ipaq|java|jigs|kddi|keji|leno|lg-c|lg-d|lg-g|lge-|maui|maxo|midp|mits|mmef|mobi|mot-|moto|mwbp|nec-|newt|noki|oper|palm|pana|pant|phil|play|port|prox|qwap|sage|sams|sany|sch-|sec-|send|seri|sgh-|shar|sie-|siem|smal|smar|sony|sph-|symb|t-mo|teli|tim-|tosh|tsm-|upg1|upsi|vk-v|voda|wap-|wapa|wapi|wapp|wapr|webc|winw|winw|xda|xda-)/
+   - HTTP_USER_AGENT: Opera Mini
+   # if constraint contains of single string it is satisfied if there is such header defined
+   # this constraint is satisfied if X_WAP_PROFILE header is specified
+   - X_WAP_PROFILE
+   - PROFILE
+
+# never_redirect option accepts three parameters:
+#  - always - performs redirect always if user requests other domain, than his client specific.
+#  - never - redirects are never performed
+#  - default - redirects are performed only if no client-specific domain has been provided in request
+never_redirect: default
+
+
+Copyright (c) 2009 InfiniteLoop http://www.infiniteloop.eu
